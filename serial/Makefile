@@ -18,7 +18,8 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA            #
 ##############################################################################################
 
-DIRS=fib alignment nqueens sort strassen sparselu fft floorplan health uts
+# DIRS=fib alignment nqueens sort strassen sparselu fft floorplan health uts
+DIRS=strassen sparselu fft uts
 
 RECURSIVE=all-recursive clean-recursive dist-clean-recursive
 
@@ -26,7 +27,7 @@ all: all-recursive
 clean: clean-recursive
 dist-clean: dist-clean-recursive
 
-$(RECURSIVE): 
+$(RECURSIVE):
 	@failcom='exit 1';\
         target=`echo $@ | sed s/-recursive//`; \
         for subdir in $(DIRS); do \
@@ -36,4 +37,3 @@ $(RECURSIVE):
 
 dist: dist-clean
 	echo "TODO"
-
