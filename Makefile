@@ -8,6 +8,7 @@ dist-clean: dist-clean-recursive
 
 $(RECURSIVE): $(DIRS)
 	@failcom='exit 1';\
+        mkdir bin; \
         target=`echo $@ | sed s/-recursive//`; \
         for subdir in $(DIRS); do \
                 (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$target) \
