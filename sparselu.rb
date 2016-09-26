@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 niter = ARGV[0]
-num_threads = [2, 4, 8, 16, 24, 48]
+num_threads = ARGV[1].split(',').map(&:to_i)
 
 puts 'unit: sec'
 puts "# of threads: #{num_threads.join(' ')}"
