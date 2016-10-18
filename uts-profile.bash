@@ -2,6 +2,7 @@
 stack_size_kb=$((16 * 1024))
 ulimit -s $stack_size_kb
 export OMP_STACKSIZE=$stack_size_kb
+export OMP_WAIT_POLICY=ACTIVE
 
 if [[ $2 = serial ]]; then
     exe=uts.icc.serial
