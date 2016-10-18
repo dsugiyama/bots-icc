@@ -10,7 +10,8 @@ puts
 def run(command, num_iterations)
   iter_cmd = "for i in $(seq #{num_iterations}); do #{command}; done"
   stack_size_kb = 16 * 1024
-  result = `ulimit -s #{stack_size_kb}; export OMP_STACKSIZE=#{stack_size_kb}; #{iter_cmd}`
+  settings = "ulimit -s #{stack_size_kb}; export OMP_STACKSIZE=#{stack_size_kb}; export OMP_WAIT_POLICY=ACTIVE;"
+  result = `#{settings} #{iter_cmd}`
     .scan(/Nodes\/Sec\s*= ([0-9\.]+)/)
     .flatten
     .map(&:to_f)
