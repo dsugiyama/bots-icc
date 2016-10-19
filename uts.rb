@@ -1,8 +1,20 @@
 #!/usr/bin/env ruby
 
-niter = ARGV[0]
-num_threads = ARGV[1].split(',').map(&:to_i)
-workload = ARGV[2] || 'small'
+require 'optparse'
+
+workload = 'small'
+task_type = 'both'
+num_threads = []
+skip_serial = false
+niter = 1
+
+parser = OptionParser.new
+parser.on('-w', '--workload=VAL') { |v| workload = v }
+parser.on('-t', '--task-type=VAL') { |v| task_type = v }
+parser.on('-n', '--num-threads=VAL') { |v| num_threads = v.split(',').map(&:to_i) }
+parser.on('--skip-serial') { skip_serial = true }
+parser.on('-i', '--num-iterations=VAL') { |v| niter = v }
+parser.parse!(ARGV)
 
 puts 'unit: nodes/sec'
 puts "# of threads: #{num_threads.join(' ')}"
@@ -20,17 +32,24 @@ def run(command, num_iterations)
   puts result
 end
 
-puts 'serial'
-run "bin/uts.icc.serial -f inputs/uts/#{workload}.input", niter
-puts
-
-puts 'untied'
-num_threads.each do |n|
-  run "OMP_NUM_THREADS=#{n} bin/uts.icc.omp-tasks -f inputs/uts/#{workload}.input", niter
+unless skip_serial
+  puts 'serial'
+  run "bin/uts.icc.serial -f inputs/uts/#{workload}.input", niter
+  puts
 end
-puts
 
-puts 'tied'
-num_threads.each do |n|
-  run "OMP_NUM_THREADS=#{n} bin/uts.icc.omp-tasks-tied -f inputs/uts/#{workload}.input", niter
+if task_type == 'untied' || task_type == 'both'
+  puts 'untied'
+  num_threads.each do |n|
+    run "OMP_NUM_THREADS=#{n} bin/uts.icc.omp-tasks -f inputs/uts/#{workload}.input", niter
+  end
+  puts
+end
+
+if task_type == 'tied' || task_type == 'both'
+  puts 'tied'
+  num_threads.each do |n|
+    run "OMP_NUM_THREADS=#{n} bin/uts.icc.omp-tasks-tied -f inputs/uts/#{workload}.input", niter
+  end
+  puts
 end
