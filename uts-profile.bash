@@ -6,7 +6,7 @@ export OMP_WAIT_POLICY=ACTIVE
 
 if [[ $2 = serial ]]; then
     exe=uts.icc.serial
-    result_dir=$1_$exe
+    result_dir=${exe}_$1
 else
     export OMP_NUM_THREADS=$2
     if [[ $3 = tied ]]; then
@@ -14,8 +14,8 @@ else
     else
         exe=uts.icc.omp-tasks
     fi
-    result_dir=$1_${exe}_$2
+    result_dir=${exe}_$1_$2
 fi
 
-amplxe-cl -collect $1 -result-dir $result_dir -- \
-    bin/$exe -f inputs/uts/small.input
+amplxe-cl -collect hotspots -result-dir $result_dir -- \
+    bin/$exe -f inputs/uts/$1.input
