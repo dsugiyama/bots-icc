@@ -73,6 +73,7 @@
  ***********************************************************/
 unsigned long long nLeaves = 0;
 int maxTreeDepth = 0;
+#pragma omp threadprivate(maxTreeDepth)
 /***********************************************************
  * Tree generation strategy is controlled via various      *
  * parameters set from the command line.  The parameters   *
@@ -198,6 +199,7 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
   unsigned long long subtreesize = 1, partialCount[numChildren];
 
   node_count++;
+  if (maxTreeDepth < depth) maxTreeDepth = depth;
 
   // Recurse on the children
   for (i = 0; i < numChildren; i++) {
@@ -264,9 +266,13 @@ void uts_show_stats( void )
    int nPes = atoi(bots_resources);
    int chunkSize = 0;
 
+   int depth;
+   #pragma omp parallel reduction(max: depth)
+   depth = maxTreeDepth;
+
    bots_message("\n");
    bots_message("Tree size                            = %llu\n", (unsigned long long)  bots_number_of_tasks );
-   bots_message("Maximum tree depth                   = %d\n", maxTreeDepth );
+   bots_message("Maximum tree depth                   = %d\n", depth );
    bots_message("Chunk size                           = %d\n", chunkSize );
    bots_message("Number of leaves                     = %llu (%.2f%%)\n", nLeaves, nLeaves/(float)bots_number_of_tasks*100.0 );
    bots_message("Number of PE's                       = %.4d threads\n", nPes );
