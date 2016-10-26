@@ -196,6 +196,35 @@ unsigned long long parallel_uts ( Node *root )
    return num_nodes;
 }
 
+unsigned long long serTreeSearch(int depth, Node *parent, int numChildren)
+{
+  Node n[numChildren], *nodePtr;
+  int i, j;
+  unsigned long long subtreesize = 1, partialCount[numChildren];
+
+  // Recurse on the children
+  for (i = 0; i < numChildren; i++) {
+     nodePtr = &n[i];
+
+     nodePtr->height = parent->height + 1;
+
+     // The following line is the work (one or more SHA-1 ops)
+     for (j = 0; j < computeGranularity; j++) {
+        rng_spawn(parent->state.state, nodePtr->state.state, i);
+     }
+
+     nodePtr->numChildren = uts_numChildren(nodePtr);
+
+     partialCount[i] = serTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
+  }
+
+  for (i = 0; i < numChildren; i++) {
+     subtreesize += partialCount[i];
+  }
+
+  return subtreesize;
+}
+
 unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
 {
   Node n[numChildren], *nodePtr;
@@ -215,8 +244,13 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
 
      nodePtr->numChildren = uts_numChildren(nodePtr);
 
-     #pragma omp task untied firstprivate(i, nodePtr) shared(partialCount) final(depth == cutoff_depth) mergeable
+     if (depth == cutoff_depth) {
+        #pragma omp task untied firstprivate(i, nodePtr) shared(partialCount)
+        partialCount[i] = serTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
+     } else {
+        #pragma omp task untied firstprivate(i, nodePtr) shared(partialCount)
         partialCount[i] = parTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
+     }
   }
 
   #pragma omp taskwait
