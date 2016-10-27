@@ -176,7 +176,9 @@ ABT_xstream xstreams[256];
 void setup_abt(void)
 {
     ABT_init(0, NULL);
-    int num_threads = omp_get_num_threads();
+
+    const char *env = getenv("ABT_NUM_ES");
+    int num_threads = atoi(env);
 
     ABT_pool pools[num_threads];
     for (int i = 0; i < num_threads; i++) {
