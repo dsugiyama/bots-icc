@@ -62,6 +62,7 @@
 #include <string.h>
 #include <math.h>
 #include <omp.h>
+#include <abt.h>
 #include <sys/time.h>
 
 #include "app-desc.h"
@@ -170,28 +171,76 @@ int uts_numChildren(Node *parent)
  * Recursive depth-first implementation                    *
  ***********************************************************/
 
+ABT_xstream xstreams[256];
+
+void setup_abt(void)
+{
+    ABT_init(0, NULL);
+    int num_threads = omp_get_num_threads();
+
+    ABT_pool pools[num_threads];
+    for (int i = 0; i < num_threads; i++) {
+        ABT_pool_create_basic(ABT_POOL_FIFO, ABT_POOL_ACCESS_SPMC, ABT_TRUE, &pools[i]);
+    }
+
+    ABT_xstream_self(&xstreams[0]);
+    ABT_xstream_set_main_sched_basic(xstreams[0], ABT_SCHED_RANDWS, num_threads, pools);
+
+    for (int i = 1; i < num_threads; i++) {
+        ABT_pool tmp;
+        tmp = pools[0];
+        pools[0] = pools[i];
+        pools[i] = tmp;
+        ABT_xstream_create_basic(ABT_SCHED_RANDWS, num_threads, pools, ABT_SCHED_CONFIG_NULL, &xstreams[i]);
+    }
+}
+
+struct args_ret
+{
+    int depth;
+    Node *parent;
+    int numChildren;
+    unsigned long long *num_nodes;
+};
+
 unsigned long long parallel_uts ( Node *root )
 {
+   setup_abt();
+
    unsigned long long num_nodes = 0 ;
    root->numChildren = uts_numChildren(root);
 
    bots_message("Computing Unbalance Tree Search algorithm ");
 
-   #pragma omp parallel
-      #pragma omp single nowait
-      #pragma omp task untied
-        num_nodes = parTreeSearch( 0, root, root->numChildren );
+   ABT_xstream self;
+   ABT_xstream_self(&self);
+   struct args_ret ar = { .depth = 0, .parent = root, .numChildren = root->numChildren, .num_nodes = &num_nodes };
+   ABT_thread thread;
+   ABT_thread_create_on_xstream(self, parTreeSearch, &ar, ABT_THREAD_ATTR_NULL, &thread);
+
+   ABT_thread_join(thread);
+   ABT_thread_free(&thread);
 
    bots_message(" completed!");
 
    return num_nodes;
 }
 
-unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
+void parTreeSearch(void *arg)
 {
+  struct args_ret *ar = (struct args_ret *) arg;
+  int depth = ar->depth;
+  Node *parent = ar->parent;
+  int numChildren = ar->numChildren;
+
   Node n[numChildren], *nodePtr;
   int i, j;
   unsigned long long subtreesize = 1, partialCount[numChildren];
+
+  ABT_xstream self;
+  ABT_xstream_self(&self);
+  struct args_ret ars[numChildren];
+  ABT_thread threads[numChildren];
 
   // Recurse on the children
   for (i = 0; i < numChildren; i++) {
@@ -206,17 +255,17 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
 
      nodePtr->numChildren = uts_numChildren(nodePtr);
 
-     #pragma omp task untied firstprivate(i, nodePtr) shared(partialCount)
-        partialCount[i] = parTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
+     ars[i] = (struct args_ret) { .depth = depth + 1, .parent = nodePtr, .numChildren = nodePtr->numChildren, .num_nodes = &partialCount[i] };
+     ABT_thread_create_on_xstream(self, parTreeSearch, &ars[i], ABT_THREAD_ATTR_NULL, &threads[i]);
   }
 
-  #pragma omp taskwait
-
   for (i = 0; i < numChildren; i++) {
+     ABT_thread_join(threads[i]);
+     ABT_thread_free(&threads[i]);
      subtreesize += partialCount[i];
   }
 
-  return subtreesize;
+  *ar->num_nodes = subtreesize;
 }
 
 void uts_read_file ( char *filename )
