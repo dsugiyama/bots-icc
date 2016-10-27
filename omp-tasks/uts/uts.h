@@ -1,6 +1,6 @@
 /*
  *         ---- The Unbalanced Tree Search (UTS) Benchmark ----
- *  
+ *
  *  This file is part of the unbalanced tree search benchmark.  This
  *  project is licensed under the MIT Open Source license.  See the LICENSE
  *  file for copyright and licensing information.
@@ -28,7 +28,7 @@
 struct node_t {
   int height;        // depth of this node in the tree
   int numChildren;   // number of children, -1 => not yet determined
-  
+
   /* for RNG state associated with this node */
   struct state_t state;
 };
@@ -36,10 +36,10 @@ struct node_t {
 typedef struct node_t Node;
 
 /* Tree type
- *   Trees are generated using a Galton-Watson process, in 
- *   which the branching factor of each node is a random 
+ *   Trees are generated using a Galton-Watson process, in
+ *   which the branching factor of each node is a random
  *   variable.
- *   
+ *
  *   The random variable can follow a binomial distribution
  *   or a geometric distribution.  Hybrid tree are
  *   generated with geometric distributions near the
@@ -60,7 +60,7 @@ extern int    verbose;
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 
-unsigned long long parTreeSearch(int depth, Node *parent, int numChildren);
+void parTreeSearch(void *arg);
 
 int    uts_paramsToStr(char *strBuf, int ind);
 void   uts_read_file(char *file);
