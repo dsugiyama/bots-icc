@@ -6,7 +6,7 @@
 /*
  * Copyright (c) 2007 The Unbalanced Tree Search (UTS) Project Team:
  * -----------------------------------------------------------------
- *  
+ *
  *  This file is part of the unbalanced tree search benchmark.  This
  *  project is licensed under the MIT Open Source license.  See the LICENSE
  *  file for copyright and licensing information.
@@ -23,7 +23,7 @@
  *   Jinze Liu         liu,
  *   Stephen Olivier   olivier,
  *   Jan Prins*        prins at cs.umd.edu>
- * 
+ *
  * The Ohio State University:
  *   James Dinan      <dinan,
  *   Gerald Sabin      sabin,
@@ -47,7 +47,7 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
@@ -87,12 +87,12 @@ double b_0   = 4.0; // default branching factor at the root
 int   rootId = 0;   // default seed for RNG state at root
 /***********************************************************
  *  The branching factor at the root is specified by b_0.
- *  The branching factor below the root follows an 
+ *  The branching factor below the root follows an
  *     identical binomial distribution at all nodes.
- *  A node has m children with prob q, or no children with 
+ *  A node has m children with prob q, or no children with
  *     prob (1-q).  The expected branching factor is q * m.
  *
- *  Default parameter values 
+ *  Default parameter values
  ***********************************************************/
 int    nonLeafBF   = 4;            // m
 double nonLeafProb = 15.0 / 64.0;  // q
@@ -133,7 +133,7 @@ void uts_initRoot(Node * root)
 int uts_numChildren_bin(Node * parent)
 {
   // distribution is identical everywhere below root
-  int    v = rng_rand(parent->state.state);	
+  int    v = rng_rand(parent->state.state);
   double d = rng_toProb(v);
 
   return (d < nonLeafProb) ? nonLeafBF : 0;
@@ -146,7 +146,7 @@ int uts_numChildren(Node *parent)
   /* Determine the number of children */
   if (parent->height == 0) numChildren = (int) floor(b_0);
   else numChildren = uts_numChildren_bin(parent);
-  
+
   // limit number of children
   // only a BIN root can have more than MAXNUMCHILDREN
   if (parent->height == 0) {
@@ -177,7 +177,7 @@ unsigned long long parallel_uts ( Node *root )
 
    bots_message("Computing Unbalance Tree Search algorithm ");
 
-   #pragma omp parallel  
+   #pragma omp parallel
       #pragma omp single nowait
       #pragma omp task untied
         num_nodes = parTreeSearch( 0, root, root->numChildren );
@@ -187,7 +187,7 @@ unsigned long long parallel_uts ( Node *root )
    return num_nodes;
 }
 
-unsigned long long parTreeSearch(int depth, Node *parent, int numChildren) 
+unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
 {
   Node n[numChildren], *nodePtr;
   int i, j;
@@ -215,7 +215,7 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
   for (i = 0; i < numChildren; i++) {
      subtreesize += partialCount[i];
   }
-  
+
   return subtreesize;
 }
 
@@ -262,7 +262,7 @@ void uts_show_stats( void )
    bots_message("Tree size                            = %llu\n", (unsigned long long)  bots_number_of_tasks );
    bots_message("Maximum tree depth                   = %d\n", maxTreeDepth );
    bots_message("Chunk size                           = %d\n", chunkSize );
-   bots_message("Number of leaves                     = %llu (%.2f%%)\n", nLeaves, nLeaves/(float)bots_number_of_tasks*100.0 ); 
+   bots_message("Number of leaves                     = %llu (%.2f%%)\n", nLeaves, nLeaves/(float)bots_number_of_tasks*100.0 );
    bots_message("Number of PE's                       = %.4d threads\n", nPes );
    bots_message("Wallclock time                       = %.3f sec\n", bots_time_program );
    bots_message("Overall performance                  = %.0f nodes/sec\n", (bots_number_of_tasks / bots_time_program) );
