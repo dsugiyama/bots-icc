@@ -214,14 +214,8 @@ unsigned long long parallel_uts ( Node *root )
 
    bots_message("Computing Unbalance Tree Search algorithm ");
 
-   ABT_xstream self;
-   ABT_xstream_self(&self);
    struct args_ret ar = { .depth = 0, .parent = root, .numChildren = root->numChildren, .num_nodes = &num_nodes };
-   ABT_thread thread;
-   ABT_thread_create_on_xstream(self, parTreeSearch, &ar, ABT_THREAD_ATTR_NULL, &thread);
-
-   ABT_thread_join(thread);
-   ABT_thread_free(&thread);
+   parTreeSearch(&ar);
 
    bots_message(" completed!");
 
