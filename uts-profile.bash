@@ -2,6 +2,7 @@
 stack_size_kb=$((16 * 1024))
 ulimit -s $stack_size_kb
 export ABT_THREAD_STACKSIZE=$stack_size_kb
+export LD_LIBRARY_PATH=$HOME/inst/argobots/optdbg/lib:$LD_LIBRARY_PATH
 
 if [[ $2 = serial ]]; then
     exe=uts.icc.serial
