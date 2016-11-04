@@ -43,7 +43,7 @@ end
 if task_type == 'untied' || task_type == 'both'
   puts 'untied'
   num_threads.each do |n|
-    run "OMP_NUM_THREADS=#{n} bin/uts.icc.omp-tasks -f inputs/uts/#{workload}.input", niter
+    run "ABT_NUM_ES=#{n} bin/uts.icc.omp-tasks -f inputs/uts/#{workload}.input", niter
   end
   puts
 end
@@ -51,7 +51,7 @@ end
 if task_type == 'tied' || task_type == 'both'
   puts 'tied'
   num_threads.each do |n|
-    run "OMP_NUM_THREADS=#{n} bin/uts.icc.omp-tasks-tied -f inputs/uts/#{workload}.input", niter
+    run "ABT_NUM_ES=#{n} bin/uts.icc.omp-tasks-tied -f inputs/uts/#{workload}.input", niter
   end
   puts
 end
