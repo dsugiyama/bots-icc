@@ -4,7 +4,7 @@
             "name": "Mac",
             "includePath": [
                 "/usr/include",
-                "/opt/intel/compilers_and_libraries_2017.1.126/mac/compiler/include",
+                "/opt/intel/include",
                 "/Users/daisuke/inst/argobots/include"
             ],
             "browse" : {
