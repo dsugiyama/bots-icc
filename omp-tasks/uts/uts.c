@@ -182,7 +182,7 @@ void setup_abt(void)
 
     ABT_pool pools[num_threads];
     for (int i = 0; i < num_threads; i++) {
-        ABT_pool_create_basic(ABT_POOL_FIFO, ABT_POOL_ACCESS_MPMC, ABT_TRUE, &pools[i]);
+        ABT_pool_create_basic(ABT_POOL_DEQUE, ABT_POOL_ACCESS_SPMC, ABT_TRUE, $pools[i]);
     }
 
     ABT_xstream_self(&xstreams[0]);
