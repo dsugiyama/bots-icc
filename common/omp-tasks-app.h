@@ -18,8 +18,6 @@
 /*  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA            */
 /**********************************************************************************************/
 
-#include <omp.h>
-
 #define MODEL OMP-TASKS
 
 #ifdef FORCE_TIED_TASKS

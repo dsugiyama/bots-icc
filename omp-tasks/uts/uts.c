@@ -61,7 +61,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <omp.h>
 #include <abt.h>
 #include <sys/time.h>
 
