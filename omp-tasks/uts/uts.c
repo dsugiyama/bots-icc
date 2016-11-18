@@ -177,7 +177,7 @@ unsigned long long parallel_uts ( Node *root )
 
    bots_message("Computing Unbalance Tree Search algorithm ");
 
-   num_nodes = cilk_spawn parTreeSearch( 0, root, root->numChildren );
+   num_nodes = parTreeSearch( 0, root, root->numChildren );
 
    bots_message(" completed!");
 
@@ -191,7 +191,7 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
   unsigned long long subtreesize = 1, partialCount[numChildren];
 
   // Recurse on the children
-  for (i = 0; i < numChildren; i++) {
+  cilk_for (i = 0; i < numChildren; i++) {
      nodePtr = &n[i];
 
      nodePtr->height = parent->height + 1;
@@ -203,10 +203,8 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
 
      nodePtr->numChildren = uts_numChildren(nodePtr);
 
-     partialCount[i] = cilk_spawn parTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
+     partialCount[i] = parTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
   }
-
-  cilk_sync;
 
   for (i = 0; i < numChildren; i++) {
      subtreesize += partialCount[i];
