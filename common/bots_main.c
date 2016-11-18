@@ -29,6 +29,7 @@
 #include <memory.h>
 #include <sys/time.h>
 #include <libgen.h>
+#include <cilk/cilk_api.h>
 #include "bots_common.h"
 #include "bots_main.h"
 #include "bots.h"
@@ -449,7 +450,7 @@ void bots_set_info ()
    snprintf(bots_name, BOTS_TMP_STR_SZ, BOTS_APP_NAME);
    snprintf(bots_parameters, BOTS_TMP_STR_SZ, BOTS_APP_PARAMETERS_DESC BOTS_APP_PARAMETERS_LIST);
    snprintf(bots_model, BOTS_TMP_STR_SZ, BOTS_MODEL_DESC);
-   snprintf(bots_resources, BOTS_TMP_STR_SZ, "%d", omp_get_max_threads());
+   snprintf(bots_resources, BOTS_TMP_STR_SZ, "%d", __cilkrts_get_nworkers());
 
    /* compilation info (do not modify) */
    snprintf(bots_comp_date, BOTS_TMP_STR_SZ, CDATE);
