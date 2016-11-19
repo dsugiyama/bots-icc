@@ -213,54 +213,103 @@ unsigned long long parallel_uts ( Node *root )
 
    bots_message("Computing Unbalance Tree Search algorithm ");
 
-   struct args_ret ar = { .depth = 0, .parent = root, .numChildren = root->numChildren, .num_nodes = &num_nodes };
-   parTreeSearch(&ar);
+   num_nodes = parTreeSearch( 0, root, root->numChildren );
 
    bots_message(" completed!");
 
    return num_nodes;
 }
 
-void parTreeSearch(void *arg)
+struct divconq_args
 {
-  struct args_ret *ar = (struct args_ret *) arg;
-  int depth = ar->depth;
-  Node *parent = ar->parent;
-  int numChildren = ar->numChildren;
+    void (*loop_func)(int from, int to_exclusive, void *args);
+    int from;
+    int to_exclusive;
+    void *func_args;
+};
 
+void loop_divide_conquer(struct divconq_args *a)
+{
+    if (a->to_exclusive - a->from <= 1) {
+        a->loop_func(a->from, a->to_exclusive, a->func_args);
+        return;
+    }
+
+    struct divconq_args args_call = {
+        .loop_func = a->loop_func,
+        .from = a->from,
+        .to_exclusive = a->from + ((a->to_exclusive - a->from) >> 1),
+        .func_args = a->func_args
+    };
+    struct divconq_args args_spawn = {
+        .loop_func = a->loop_func,
+        .from = args_call.to_exclusive,
+        .to_exclusive = a->to_exclusive,
+        .func_args = a->func_args
+    };
+
+    ABT_xstream self;
+    ABT_xstream_self(&self);
+    ABT_thread spawn_thread;
+    ABT_thread_create_on_xstream(self, loop_divide_conquer, &args_spawn, ABT_THREAD_ATTR_NULL, &spawn_thread);
+
+    loop_divide_conquer(&args_call);
+    ABT_thread_join(spawn_thread);
+    ABT_thread_free(&spawn_thread);
+}
+
+struct loop_args
+{
+    Node *n;
+    Node *parent;
+    unsigned long long *partialCount;
+    int depth;
+};
+
+void parTreeSearch_loop(int from, int to_exclusive, struct loop_args *a)
+{
+    Node *n = a->n;
+    Node *parent = a->parent;
+    unsigned long long *partialCount = a->partialCount;
+    int depth = a->depth;
+
+    for (int i = from; i < to_exclusive; i++) {
+        Node *nodePtr = &n[i];
+
+        nodePtr->height = parent->height + 1;
+
+        // The following line is the work (one or more SHA-1 ops)
+        for (int j = 0; j < computeGranularity; j++) {
+            rng_spawn(parent->state.state, nodePtr->state.state, i);
+        }
+
+        nodePtr->numChildren = uts_numChildren(nodePtr);
+
+        partialCount[i] = parTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
+    }
+}
+
+unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
+{
   Node n[numChildren], *nodePtr;
   int i, j;
   unsigned long long subtreesize = 1, partialCount[numChildren];
 
-  ABT_xstream self;
-  ABT_xstream_self(&self);
-  struct args_ret ars[numChildren];
-  ABT_thread threads[numChildren];
-
   // Recurse on the children
-  for (i = 0; i < numChildren; i++) {
-     nodePtr = &n[i];
-
-     nodePtr->height = parent->height + 1;
-
-     // The following line is the work (one or more SHA-1 ops)
-     for (j = 0; j < computeGranularity; j++) {
-        rng_spawn(parent->state.state, nodePtr->state.state, i);
-     }
-
-     nodePtr->numChildren = uts_numChildren(nodePtr);
-
-     ars[i] = (struct args_ret) { .depth = depth + 1, .parent = nodePtr, .numChildren = nodePtr->numChildren, .num_nodes = &partialCount[i] };
-     ABT_thread_create_on_xstream(self, parTreeSearch, &ars[i], ABT_THREAD_ATTR_NULL, &threads[i]);
-  }
+  struct loop_args la = { .n = n, .parent = parent, .partialCount = partialCount, .depth = depth };
+  struct divconq_args dca = {
+      .loop_func = parTreeSearch_loop,
+      .from = 0,
+      .to_exclusive = numChildren,
+      .func_args = &la
+  };
+  loop_divide_conquer(&dca);
 
   for (i = 0; i < numChildren; i++) {
-     ABT_thread_join(threads[i]);
-     ABT_thread_free(&threads[i]);
      subtreesize += partialCount[i];
   }
 
-  *ar->num_nodes = subtreesize;
+  return subtreesize;
 }
 
 void uts_read_file ( char *filename )

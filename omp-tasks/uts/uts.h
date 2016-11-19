@@ -60,7 +60,7 @@ extern int    verbose;
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 
-void parTreeSearch(void *arg);
+unsigned long long parTreeSearch(int depth, Node *parent, int numChildren);
 
 int    uts_paramsToStr(char *strBuf, int ind);
 void   uts_read_file(char *file);
