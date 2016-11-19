@@ -230,7 +230,7 @@ struct divconq_args
 
 void loop_divide_conquer(struct divconq_args *a)
 {
-    if (a->to_exclusive - a->from <= 3) {
+    if (a->to_exclusive - a->from <= 2) {
         a->loop_func(a->from, a->to_exclusive, a->func_args);
         return;
     }
