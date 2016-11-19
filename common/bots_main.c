@@ -486,7 +486,7 @@ main(int argc, char* argv[])
    BOTS_APP_INIT;
    bots_set_info();
 
-   __cilkrts_set_param("stack size", "33554432");
+   __cilkrts_set_param("stack size", "67108864");
 
 #ifdef KERNEL_SEQ_CALL
 #ifdef BOTS_APP_CHECK_USES_SEQ_RESULT

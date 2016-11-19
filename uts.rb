@@ -22,7 +22,7 @@ puts
 
 def run(command, num_iterations)
   iter_cmd = "for i in $(seq #{num_iterations}); do #{command}; done"
-  stack_size_kb = 32 * 1024
+  stack_size_kb = 64 * 1024
   settings  = "ulimit -s #{stack_size_kb}; "
   settings += "export LD_LIBRARY_PATH=$HOME/inst/intel-cilk-runtime/lib:$LD_LIBRARY_PATH;"
   result = `#{settings} #{iter_cmd}`
