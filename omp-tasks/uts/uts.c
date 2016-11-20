@@ -193,7 +193,7 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
   unsigned long long subtreesize = 1, partialCount[numChildren];
 
   // Recurse on the children
-  #pragma omp taskloop untied shared(n, partialCount) private(nodePtr, j)
+  #pragma omp taskloop shared(n, partialCount) private(nodePtr, j)
   for (i = 0; i < numChildren; i++) {
      nodePtr = &n[i];
 
