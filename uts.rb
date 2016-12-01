@@ -7,6 +7,7 @@ task_type = 'both'
 num_threads = []
 skip_serial = false
 niter = 1
+max_pool_size = 511
 
 parser = OptionParser.new
 parser.on('-w', '--workload=VAL', 'Name of the workload') { |v| workload = v }
@@ -14,6 +15,7 @@ parser.on('-t', '--task-type=VAL', 'Type of OpenMP tasks ("tied", "untied", or "
 parser.on('-n', '--num-threads=VAL', 'Number of threads') { |v| num_threads = v.split(',').map(&:to_i) }
 parser.on('--skip-serial', 'Skip the execution of serial version') { skip_serial = true }
 parser.on('-i', '--num-iterations=VAL', 'Comma-separated list of number of iterations') { |v| niter = v }
+parser.on('--max-pool-size=VAL', 'Maximum pool size') { |v| max_pool_size = v }
 parser.on_tail('-h', '--help', 'Show this message') { puts parser; exit }
 parser.parse!(ARGV)
 
@@ -42,7 +44,7 @@ end
 if task_type == 'untied' || task_type == 'both'
   puts 'untied'
   num_threads.each do |n|
-    run "ABT_NUM_ES=#{n} bin/uts.icc.omp-tasks -f inputs/uts/#{workload}.input", niter
+    run "ABT_NUM_ES=#{n} MAX_POOL_SIZE=#{max_pool_size} bin/uts.icc.omp-tasks -f inputs/uts/#{workload}.input", niter
   end
   puts
 end
@@ -50,7 +52,7 @@ end
 if task_type == 'tied' || task_type == 'both'
   puts 'tied'
   num_threads.each do |n|
-    run "ABT_NUM_ES=#{n} bin/uts.icc.omp-tasks-tied -f inputs/uts/#{workload}.input", niter
+    run "ABT_NUM_ES=#{n} MAX_POOL_SIZE=#{max_pool_size} bin/uts.icc.omp-tasks-tied -f inputs/uts/#{workload}.input", niter
   end
   puts
 end
