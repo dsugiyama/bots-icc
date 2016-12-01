@@ -9,11 +9,12 @@ skip_serial = false
 niter = 1
 
 parser = OptionParser.new
-parser.on('-w', '--workload=VAL') { |v| workload = v }
-parser.on('-t', '--task-type=VAL') { |v| task_type = v }
-parser.on('-n', '--num-threads=VAL') { |v| num_threads = v.split(',').map(&:to_i) }
-parser.on('--skip-serial') { skip_serial = true }
-parser.on('-i', '--num-iterations=VAL') { |v| niter = v }
+parser.on('-w', '--workload=VAL', 'Name of the workload') { |v| workload = v }
+parser.on('-t', '--task-type=VAL', 'Type of OpenMP tasks ("tied", "untied", or "both")') { |v| task_type = v }
+parser.on('-n', '--num-threads=VAL', 'Number of threads') { |v| num_threads = v.split(',').map(&:to_i) }
+parser.on('--skip-serial', 'Skip the execution of serial version') { skip_serial = true }
+parser.on('-i', '--num-iterations=VAL', 'Comma-separated list of number of iterations') { |v| niter = v }
+parser.on_tail('-h', '--help', 'Show this message') { puts parser; exit }
 parser.parse!(ARGV)
 
 puts 'unit: nodes/sec'
