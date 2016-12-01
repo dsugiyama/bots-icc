@@ -171,6 +171,8 @@ int uts_numChildren(Node *parent)
  ***********************************************************/
 
 ABT_xstream xstreams[256];
+ABT_pool pools[256];
+int max_pool_size;
 
 void setup_abt(void)
 {
@@ -179,7 +181,9 @@ void setup_abt(void)
     const char *env = getenv("ABT_NUM_ES");
     int num_threads = atoi(env);
 
-    ABT_pool pools[num_threads];
+    env = getenv("MAX_POOL_SIZE");
+    max_pool_size = atoi(env);
+
     for (int i = 0; i < num_threads; i++) {
         ABT_pool_create_basic(ABT_POOL_DEQUE, ABT_POOL_ACCESS_SPMC, ABT_TRUE, &pools[i]);
     }
@@ -187,12 +191,14 @@ void setup_abt(void)
     ABT_xstream_self(&xstreams[0]);
     ABT_xstream_set_main_sched_basic(xstreams[0], ABT_SCHED_RANDWS, num_threads, pools);
 
+    ABT_pool tmp_pool_list[num_threads];
+    memcpy(tmp_pool_list, pools, num_threads * sizeof(ABT_pool));
     for (int i = 1; i < num_threads; i++) {
         ABT_pool tmp;
-        tmp = pools[0];
-        pools[0] = pools[i];
-        pools[i] = tmp;
-        ABT_xstream_create_basic(ABT_SCHED_RANDWS, num_threads, pools, ABT_SCHED_CONFIG_NULL, &xstreams[i]);
+        tmp = tmp_pool_list[0];
+        tmp_pool_list[0] = tmp_pool_list[i];
+        tmp_pool_list[i] = tmp;
+        ABT_xstream_create_basic(ABT_SCHED_RANDWS, num_threads, tmp_pool_list, ABT_SCHED_CONFIG_NULL, &xstreams[i]);
     }
 }
 
@@ -235,23 +241,32 @@ void loop_divide_conquer(struct divconq_args *a)
         return;
     }
 
-    struct divconq_args args_call = {
-        .loop_func = a->loop_func,
-        .from = a->from,
-        .to_exclusive = a->from + ((a->to_exclusive - a->from) >> 1),
-        .func_args = a->func_args
-    };
+    int middle = a->from + ((a->to_exclusive - a->from) >> 1);
     struct divconq_args args_spawn = {
         .loop_func = a->loop_func,
-        .from = args_call.to_exclusive,
+        .from = middle,
         .to_exclusive = a->to_exclusive,
         .func_args = a->func_args
     };
 
-    ABT_xstream self;
-    ABT_xstream_self(&self);
+    int rank, pool_size;
+    ABT_xstream_self_rank(&rank);
+    ABT_pool_get_size(pools[rank], &pool_size);
+    if (pool_size >= max_pool_size) {
+        a->loop_func(a->from, middle, a->func_args);
+        loop_divide_conquer(&args_spawn);
+        return;
+    }
+
+    struct divconq_args args_call = {
+        .loop_func = a->loop_func,
+        .from = a->from,
+        .to_exclusive = middle,
+        .func_args = a->func_args
+    };
+
     ABT_thread spawn_thread;
-    ABT_thread_create_on_xstream(self, loop_divide_conquer, &args_spawn, ABT_THREAD_ATTR_NULL, &spawn_thread);
+    ABT_thread_create(pools[rank], loop_divide_conquer, &args_spawn, ABT_THREAD_ATTR_NULL, &spawn_thread);
 
     loop_divide_conquer(&args_call);
     ABT_thread_join(spawn_thread);
