@@ -253,8 +253,7 @@ void loop_divide_conquer(struct divconq_args *a)
     ABT_xstream_self_rank(&rank);
     ABT_pool_get_size(pools[rank], &pool_size);
     if (pool_size >= max_pool_size) {
-        a->loop_func(a->from, middle, a->func_args);
-        loop_divide_conquer(&args_spawn);
+        a->loop_func(a->from, a->to_exclusive, a->func_args);
         return;
     }
 
