@@ -241,14 +241,6 @@ void loop_divide_conquer(struct divconq_args *a)
         return;
     }
 
-    int middle = a->from + ((a->to_exclusive - a->from) >> 1);
-    struct divconq_args args_spawn = {
-        .loop_func = a->loop_func,
-        .from = middle,
-        .to_exclusive = a->to_exclusive,
-        .func_args = a->func_args
-    };
-
     int rank, pool_size;
     ABT_xstream_self_rank(&rank);
     ABT_pool_get_size(pools[rank], &pool_size);
@@ -256,6 +248,14 @@ void loop_divide_conquer(struct divconq_args *a)
         a->loop_func(a->from, a->to_exclusive, a->func_args);
         return;
     }
+
+    int middle = a->from + ((a->to_exclusive - a->from) >> 1);
+    struct divconq_args args_spawn = {
+        .loop_func = a->loop_func,
+        .from = middle,
+        .to_exclusive = a->to_exclusive,
+        .func_args = a->func_args
+    };
 
     struct divconq_args args_call = {
         .loop_func = a->loop_func,
