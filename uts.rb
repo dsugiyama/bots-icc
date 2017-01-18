@@ -37,7 +37,7 @@ end
 
 unless skip_serial
   puts 'serial'
-  run "bin/uts.abt.serial -f inputs/uts/#{workload}.input", niter
+  run "#{membind} bin/uts.abt.serial -f inputs/uts/#{workload}.input", niter
   puts
 end
 
