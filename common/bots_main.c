@@ -474,7 +474,7 @@ void bots_set_info ()
  * main: 
  **********************************************************************/
 int
-main(int argc, char* argv[])
+ompc_main(int argc, char* argv[])
 {
 #ifndef BOTS_APP_SELF_TIMING
    long bots_t_start;

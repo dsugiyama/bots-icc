@@ -61,12 +61,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <abt.h>
 #include <sys/time.h>
 
 #include "app-desc.h"
 #include "bots.h"
 #include "uts.h"
+
+int ompc_get_max_threads(void);
+typedef void (*loop_func_t)(uint64_t from, uint64_t to_exclusive, int step, void *args[]);
+void ompc_loop_divide_conquer(loop_func_t func, int nargs, void *args,
+                              uint64_t from, uint64_t to_exclusive, int step, int num_tasks);
 
 /***********************************************************
  *  Global state                                           *
@@ -170,44 +174,8 @@ int uts_numChildren(Node *parent)
  * Recursive depth-first implementation                    *
  ***********************************************************/
 
-ABT_xstream xstreams[256];
-
-void setup_abt(void)
-{
-    ABT_init(0, NULL);
-
-    const char *env = getenv("ABT_NUM_ES");
-    int num_threads = atoi(env);
-
-    ABT_pool pools[num_threads];
-    for (int i = 0; i < num_threads; i++) {
-        ABT_pool_create_basic(ABT_POOL_DEQUE, ABT_POOL_ACCESS_SPMC, ABT_TRUE, &pools[i]);
-    }
-
-    ABT_xstream_self(&xstreams[0]);
-    ABT_xstream_set_main_sched_basic(xstreams[0], ABT_SCHED_RANDWS, num_threads, pools);
-
-    for (int i = 1; i < num_threads; i++) {
-        ABT_pool tmp;
-        tmp = pools[0];
-        pools[0] = pools[i];
-        pools[i] = tmp;
-        ABT_xstream_create_basic(ABT_SCHED_RANDWS, num_threads, pools, ABT_SCHED_CONFIG_NULL, &xstreams[i]);
-    }
-}
-
-struct args_ret
-{
-    int depth;
-    Node *parent;
-    int numChildren;
-    unsigned long long *num_nodes;
-};
-
 unsigned long long parallel_uts ( Node *root )
 {
-   setup_abt();
-
    unsigned long long num_nodes = 0 ;
    root->numChildren = uts_numChildren(root);
 
@@ -220,58 +188,12 @@ unsigned long long parallel_uts ( Node *root )
    return num_nodes;
 }
 
-struct divconq_args
+void parTreeSearch_loop(uint64_t from, uint64_t to_exclusive, int step, void *args[])
 {
-    void (*loop_func)(int from, int to_exclusive, void *args);
-    int from;
-    int to_exclusive;
-    void *func_args;
-};
-
-void loop_divide_conquer(struct divconq_args *a)
-{
-    if (a->to_exclusive - a->from <= 1) {
-        a->loop_func(a->from, a->to_exclusive, a->func_args);
-        return;
-    }
-
-    struct divconq_args args_call = {
-        .loop_func = a->loop_func,
-        .from = a->from,
-        .to_exclusive = a->from + ((a->to_exclusive - a->from) >> 1),
-        .func_args = a->func_args
-    };
-    struct divconq_args args_spawn = {
-        .loop_func = a->loop_func,
-        .from = args_call.to_exclusive,
-        .to_exclusive = a->to_exclusive,
-        .func_args = a->func_args
-    };
-
-    ABT_xstream self;
-    ABT_xstream_self(&self);
-    ABT_thread spawn_thread;
-    ABT_thread_create_on_xstream(self, loop_divide_conquer, &args_spawn, ABT_THREAD_ATTR_NULL, &spawn_thread);
-
-    loop_divide_conquer(&args_call);
-    ABT_thread_join(spawn_thread);
-    ABT_thread_free(&spawn_thread);
-}
-
-struct loop_args
-{
-    Node *n;
-    Node *parent;
-    unsigned long long *partialCount;
-    int depth;
-};
-
-void parTreeSearch_loop(int from, int to_exclusive, struct loop_args *a)
-{
-    Node *n = a->n;
-    Node *parent = a->parent;
-    unsigned long long *partialCount = a->partialCount;
-    int depth = a->depth;
+    Node *n = args[0];
+    Node *parent = args[1];
+    unsigned long long *partialCount = args[2];
+    int depth = *(int *) args[3];
 
     for (int i = from; i < to_exclusive; i++) {
         Node *nodePtr = &n[i];
@@ -296,14 +218,8 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
   unsigned long long subtreesize = 1, partialCount[numChildren];
 
   // Recurse on the children
-  struct loop_args la = { .n = n, .parent = parent, .partialCount = partialCount, .depth = depth };
-  struct divconq_args dca = {
-      .loop_func = parTreeSearch_loop,
-      .from = 0,
-      .to_exclusive = numChildren,
-      .func_args = &la
-  };
-  loop_divide_conquer(&dca);
+  void *_loop_args_0[] = { n, parent, partialCount, &depth };
+  ompc_loop_divide_conquer(parTreeSearch_loop, 4, _loop_args_0, 0, numChildren, 1, numChildren);
 
   for (i = 0; i < numChildren; i++) {
      subtreesize += partialCount[i];

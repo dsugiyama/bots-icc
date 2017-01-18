@@ -60,7 +60,7 @@ ifndef PROGRAM_OBJS
 	PROGRAM_OBJS = $(PROGRAM).o
 endif
 
-COMMON_OBJS = $(COMMON_DIR)/bots_common.o
+COMMON_OBJS = $(COMMON_DIR)/bots_common.o /home/sugiyama/inst/omni-compiler_cilk/opt/lib/ompc_main.o
 
 ifeq ($(VERSION),common)
 .c.o: Makefile $(COMMON_DIR)/Makefile.common
