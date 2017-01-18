@@ -37,14 +37,14 @@ end
 
 unless skip_serial
   puts 'serial'
-  run "bin/uts.icc.serial -f inputs/uts/#{workload}.input", niter
+  run "bin/uts.abt.serial -f inputs/uts/#{workload}.input", niter
   puts
 end
 
 if task_type == 'untied' || task_type == 'both'
   puts 'untied'
   num_threads.each do |n|
-    run "OMPC_NUM_PROCS=#{n} #{membind} bin/uts.icc.omp-tasks -f inputs/uts/#{workload}.input", niter
+    run "OMPC_NUM_PROCS=#{n} #{membind} bin/uts.abt.omp-tasks -f inputs/uts/#{workload}.input", niter
   end
   puts
 end
@@ -52,7 +52,7 @@ end
 if task_type == 'tied' || task_type == 'both'
   puts 'tied'
   num_threads.each do |n|
-    run "OMPC_NUM_PROCS=#{n} #{membind} bin/uts.icc.omp-tasks-tied -f inputs/uts/#{workload}.input", niter
+    run "OMPC_NUM_PROCS=#{n} #{membind} bin/uts.abt.omp-tasks-tied -f inputs/uts/#{workload}.input", niter
   end
   puts
 end
