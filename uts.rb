@@ -48,7 +48,7 @@ end
 if task_type == 'untied' || task_type == 'both'
   puts 'untied'
   num_threads.each do |n|
-    run "OMP_NUM_THREADS=#{n} #{membind} bin/uts.#{label}.omp-tasks -f inputs/uts/#{workload}.input", niter
+    run "OMP_NUM_THREADS=#{n} OMP_PROC_BIND=true #{membind} bin/uts.#{label}.omp-tasks -f inputs/uts/#{workload}.input", niter
   end
   puts
 end
@@ -56,7 +56,7 @@ end
 if task_type == 'tied' || task_type == 'both'
   puts 'tied'
   num_threads.each do |n|
-    run "OMP_NUM_THREADS=#{n} #{membind} bin/uts.#{label}.omp-tasks-tied -f inputs/uts/#{workload}.input", niter
+    run "OMP_NUM_THREADS=#{n} OMP_PROC_BIND=true #{membind} bin/uts.#{label}.omp-tasks-tied -f inputs/uts/#{workload}.input", niter
   end
   puts
 end
