@@ -243,7 +243,6 @@ void print_node_count(uint64_t from, uint64_t to_exclusive, int step, void *args
 {
   int rank;
   ABT_xstream_self_rank(&rank);
-  printf("%llu, %llu, %d\n", from, to_exclusive, step);
   printf("%3d: %llu\n", rank, node_count);
 }
 #endif
