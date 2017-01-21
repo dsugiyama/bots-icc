@@ -63,6 +63,7 @@
 #include <string.h>
 #include <math.h>
 #include <sys/time.h>
+#include <abt.h>
 
 #include "app-desc.h"
 #include "bots.h"
@@ -212,11 +213,22 @@ void parTreeSearch_loop(uint64_t from, uint64_t to_exclusive, int step, void *ar
     }
 }
 
+#ifdef ENABLE_LOGGING
+#define CACHE_LINE_SIZE 64
+uint64_t __attribute__((aligned(CACHE_LINE_SIZE))) node_counts[256];
+#endif
+
 unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
 {
   Node n[numChildren], *nodePtr;
   int i, j;
   unsigned long long subtreesize = 1, partialCount[numChildren];
+
+#ifdef ENABLE_LOGGING
+  int rank;
+  ABT_xstream_self_rank(&rank);
+  node_count[rank]++;
+#endif
 
   // Recurse on the children
   void *_loop_args_0[] = { n, parent, partialCount, &depth };
@@ -277,6 +289,12 @@ void uts_show_stats( void )
    bots_message("Wallclock time                       = %.3f sec\n", bots_time_program );
    bots_message("Overall performance                  = %.0f nodes/sec\n", (bots_number_of_tasks / bots_time_program) );
    bots_message("Performance per PE                   = %.0f nodes/sec\n", (bots_number_of_tasks / bots_time_program / nPes) );
+
+   int num_threads = ompc_get_max_threads();
+   bots_message("Load balance:\n");
+   for (int i = 0; i < num_threads; i++) {
+     bots_message("%ull\n", node_counts[i]);
+   }
 }
 
 int uts_check_result ( void )
