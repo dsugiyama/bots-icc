@@ -214,9 +214,8 @@ void parTreeSearch_loop(uint64_t from, uint64_t to_exclusive, int step, void *ar
 }
 
 #ifdef ENABLE_LOGGING
-#define CACHE_LINE_SIZE 64
-uint64_t __attribute__((aligned(CACHE_LINE_SIZE))) node_counts[256];
-_Thread_local int tid = -1;
+_Thread_local uint64_t node_count;
+uint64_t *node_count_addrs[256];
 #endif
 
 unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
@@ -226,10 +225,7 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
   unsigned long long subtreesize = 1, partialCount[numChildren];
 
 #ifdef ENABLE_LOGGING
-  if (tid == -1) {
-    ABT_xstream_self_rank(&tid);
-  }
-  node_counts[tid]++;
+  node_count++;
 #endif
 
   // Recurse on the children
@@ -242,6 +238,15 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
 
   return subtreesize;
 }
+
+#ifdef ENABLE_LOGGING
+void save_node_count_addr(uint64_t from, uint64_t to_exclusive, int step, void *args[])
+{
+  int rank;
+  ABT_xstream_self_rank(&rank);
+  node_count_addrs[rank] = &node_count;
+}
+#endif
 
 void uts_read_file ( char *filename )
 {
@@ -275,6 +280,11 @@ void uts_read_file ( char *filename )
    bots_message("E(s)                                 = %f\n", (double) ( 1.0 / (1.0 - nonLeafProb * nonLeafBF) ) );
    bots_message("Compute granularity                  = %d\n", computeGranularity);
    bots_message("Random number generator              = "); rng_showtype();
+
+#ifdef ENABLE_LOGGING
+   int num_threads = ompc_get_max_threads();
+   ompc_loop_divide_conquer(save_node_count_addr, 0, NULL, 0, num_threads, 1, num_threads);
+#endif
 }
 
 void uts_show_stats( void )
@@ -296,7 +306,7 @@ void uts_show_stats( void )
    int num_threads = ompc_get_max_threads();
    bots_message("Load balance:\n");
    for (int i = 0; i < num_threads; i++) {
-     bots_message("%ull\n", node_counts[i]);
+     bots_message("%ull\n", *node_count_addrs[i]);
    }
 #endif
 }
