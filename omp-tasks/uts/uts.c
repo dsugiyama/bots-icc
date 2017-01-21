@@ -290,11 +290,13 @@ void uts_show_stats( void )
    bots_message("Overall performance                  = %.0f nodes/sec\n", (bots_number_of_tasks / bots_time_program) );
    bots_message("Performance per PE                   = %.0f nodes/sec\n", (bots_number_of_tasks / bots_time_program / nPes) );
 
+#ifdef ENABLE_LOGGING
    int num_threads = ompc_get_max_threads();
    bots_message("Load balance:\n");
    for (int i = 0; i < num_threads; i++) {
      bots_message("%ull\n", node_counts[i]);
    }
+#endif
 }
 
 int uts_check_result ( void )
