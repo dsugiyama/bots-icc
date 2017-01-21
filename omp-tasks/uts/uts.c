@@ -216,6 +216,7 @@ void parTreeSearch_loop(uint64_t from, uint64_t to_exclusive, int step, void *ar
 #ifdef ENABLE_LOGGING
 #define CACHE_LINE_SIZE 64
 uint64_t __attribute__((aligned(CACHE_LINE_SIZE))) node_counts[256];
+_Thread_local int tid = -1;
 #endif
 
 unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
@@ -225,9 +226,10 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
   unsigned long long subtreesize = 1, partialCount[numChildren];
 
 #ifdef ENABLE_LOGGING
-  int rank;
-  ABT_xstream_self_rank(&rank);
-  node_counts[rank]++;
+  if (tid == -1) {
+    ABT_xstream_self_rank(&tid);
+  }
+  node_counts[tid]++;
 #endif
 
   // Recurse on the children
