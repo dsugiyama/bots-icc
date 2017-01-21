@@ -107,6 +107,11 @@ int computeGranularity = 1;
 unsigned long long  exp_tree_size = 0;
 int        exp_tree_depth = 0;
 unsigned long long  exp_num_leaves = 0;
+
+#ifdef ENABLE_LOGGING
+_Thread_local uint64_t node_count = 0;
+#endif
+
 /***********************************************************
  *  FUNCTIONS                                              *
  ***********************************************************/
@@ -193,6 +198,10 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
   int i, j;
   unsigned long long subtreesize = 1, partialCount[numChildren];
 
+#ifdef ENABLE_LOGGING
+  node_count++;
+#endif
+
   // Recurse on the children
   for (i = 0; i < numChildren; i++) {
      nodePtr = &n[i];
@@ -267,6 +276,15 @@ void uts_show_stats( void )
    bots_message("Wallclock time                       = %.3f sec\n", bots_time_program );
    bots_message("Overall performance                  = %.0f nodes/sec\n", (bots_number_of_tasks / bots_time_program) );
    bots_message("Performance per PE                   = %.0f nodes/sec\n", (bots_number_of_tasks / bots_time_program / nPes) );
+
+#ifdef ENABLE_LOGGING
+   bots_message("Load balance:\n");
+   #pragma omp parallel for ordered
+   for (int i = 0; i < nPes; i++) {
+       #pragma omp ordered
+       bots_message("%llu\n", node_count);
+   }
+#endif
 }
 
 int uts_check_result ( void )
