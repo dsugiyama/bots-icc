@@ -227,7 +227,7 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
 #ifdef ENABLE_LOGGING
   int rank;
   ABT_xstream_self_rank(&rank);
-  node_count[rank]++;
+  node_counts[rank]++;
 #endif
 
   // Recurse on the children
